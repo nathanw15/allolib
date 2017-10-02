@@ -28,29 +28,13 @@ set(sources
   ${al_sources} ${EXTERNAL_SRC} ${ADDITIONAL_SOURCES}
 )
 
-# set(dirs_to_include
-#   ${CORE_INCLUDE_DIRS} ${ADDITIONAL_INCLUDE_DIRS} ${EXTERNAL_INCLUDE_DIRS}
-# )
-
 set(dirs_to_include
   ${ADDITIONAL_INCLUDE_DIRS} ${EXTERNAL_INCLUDE_DIRS}
 )
 
-# set(libs_to_link
-#   ${CORE_LIBRARIES} ${ADDITIONAL_LIBRARIES} ${EXTERNAL_LIBRARIES}
-# )
-
 set(libs_to_link
   ${ADDITIONAL_LIBRARIES} ${EXTERNAL_LIBRARIES}
 )
-
-# set(debug_libs_to_link
-#   ${EXTERNAL_DEBUG_LIBRARIES}
-# )
-
-# set(release_libs_to_link
-#   ${EXTERNAL_RELEASE_LIBRARIES}
-# )
 
 set(definitions
   ${PLATFORM_DEFINITION} ${EXTERNAL_DEFINITIONS} ${ADDITIONAL_DEFINITIONS}
@@ -60,8 +44,6 @@ set(flags
   ${basic_flags}
 )
 
-# link_directories(${CORE_LIBRARY_DIRS})
-
 # --- NOW WE ARE READY TO SETUP THE LIBRARY TARGET ---------------------
 
 # multi configuration generators
@@ -69,10 +51,7 @@ if (MSVC)
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 endif ()
 
-# add_library(al STATIC ${headers} ${sources})
 add_library(al STATIC "")
-# add_library(al STATIC ${sources})
-# add_library(al STATIC ${headers})
 target_sources(al PRIVATE ${sources})
 target_sources(al PRIVATE ${headers})
 
@@ -108,11 +87,6 @@ target_link_libraries(al
     PkgConfig::GLFW
     ${OPENGL_gl_LIBRARY}
 )
-# target_link_libraries(
-#   al
-#   debug ${debug_libs_to_link}
-#   optimized ${release_libs_to_link}
-# )
 
 # --- Testing -----------------------------------------
 add_subdirectory(test)

@@ -25,25 +25,15 @@ include(${al_path}/cmake_modules/basic_flags.cmake)
 set(dirs_to_include
   ${al_path}/include
   ${app_include_dirs}
-  # ${CORE_INCLUDE_DIRS}
   ${ADDITIONAL_INCLUDE_DIRS}
   ${EXTERNAL_INCLUDE_DIRS}
 )
 
 set(libs_to_link
   ${app_link_libs}
-  # ${CORE_LIBRARIES}
   ${ADDITIONAL_LIBRARIES}
   ${EXTERNAL_LIBRARIES}
 )
-
-# set(debug_libs_to_link
-#   ${EXTERNAL_DEBUG_LIBRARIES}
-# )
-
-# set(release_libs_to_link
-#   ${EXTERNAL_RELEASE_LIBRARIES}
-# )
 
 set(definitions
   ${PLATFORM_DEFINITION}
@@ -54,8 +44,6 @@ set(definitions
 set(flags
   ${basic_flags}
 )
-
-# link_directories(${CORE_LIBRARY_DIRS})
 
 # --- setup app target ------------------------------------
 
@@ -101,11 +89,6 @@ target_link_libraries(${app_name}
     PkgConfig::GLFW
     ${OPENGL_gl_LIBRARY}
 )
-# target_link_libraries(
-#   ${app_name}
-#   debug ${debug_libs_to_link}
-#   optimized ${release_libs_to_link}
-# )
 
 if (AL_WINDOWS)
   # when run from Visual Studio, working directory is where the solution is by default
