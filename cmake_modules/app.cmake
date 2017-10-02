@@ -99,7 +99,7 @@ target_link_libraries(${app_name} ${libs_to_link})
 target_link_libraries(${app_name}
     GLEW::GLEW
     PkgConfig::GLFW
-    ${OPENGL_LIBRARY}
+    ${OPENGL_gl_LIBRARY}
 )
 # target_link_libraries(
 #   ${app_name}

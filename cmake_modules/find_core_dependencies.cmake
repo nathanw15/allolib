@@ -9,10 +9,10 @@ find_package(OpenGL REQUIRED) # >> ${OPENGL_LIBRARY}, inlcude dirs are handled w
 
 if (AL_WINDOWS)
 
-  # set(GLFW_INCLUDE_DIRS ${al_path}/dependencies/glfw/include)
-  # set(GLFW_LIBRARIES ${al_path}/dependencies/glfw/lib-vc2015/glfw3dll.lib)
-  # set(GLEW_INCLUDE_DIRS ${al_path}/dependencies/glew/include)
-  # set(GLEW_LIBRARIES ${al_path}/dependencies/glew/lib/Release/x64/glew32.lib)
+    # set(GLFW_INCLUDE_DIRS ${al_path}/dependencies/glfw/include)
+    # set(GLFW_LIBRARIES ${al_path}/dependencies/glfw/lib-vc2015/glfw3dll.lib)
+    # set(GLEW_INCLUDE_DIRS ${al_path}/dependencies/glew/include)
+    # set(GLEW_LIBRARIES ${al_path}/dependencies/glew/lib/Release/x64/glew32.lib)
 
     add_library(GLEW::GLEW SHARED IMPORTED)
     set_target_properties(GLEW::GLEW PROPERTIES
@@ -34,26 +34,26 @@ if (AL_WINDOWS)
             ${al_path}/dependencies/glfw/lib-vc2015/glfw3.dll
     )
 
-else ()
+else () # UNIX
 
-  find_package(GLEW REQUIRED)
-  find_package(PkgConfig REQUIRED)
-  pkg_search_module(GLFW REQUIRED IMPORTED_TARGET glfw3)
+    find_package(GLEW REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(GLFW REQUIRED IMPORTED_TARGET glfw3)
 
-endif (AL_WINDOWS)
+endif ()
 
-message("GLFW_INCLUDE_DIRS: ${GLFW_INCLUDE_DIRS}")
-message("GLFW_LIBRARIES: ${GLFW_LIBRARIES}")
-message("GLFW_LIBRARY_DIRS: ${GLFW_LIBRARY_DIRS}")
+# message("GLFW_INCLUDE_DIRS: ${GLFW_INCLUDE_DIRS}")
+# message("GLFW_LIBRARIES: ${GLFW_LIBRARIES}")
+# message("GLFW_LIBRARY_DIRS: ${GLFW_LIBRARY_DIRS}")
 
 
-get_target_property(AL_GLFW_INCLUDE_DIR PkgConfig::GLFW INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(AL_GLFW_LINK_LIBS PkgConfig::GLFW INTERFACE_LINK_LIBRARIES)
-message("pkgconfig::glfw include dirs: ${AL_GLFW_INCLUDE_DIR}")
-message("pkgconfig::glfw link libs: ${AL_GLFW_LINK_LIBS}")
+# get_target_property(AL_GLFW_INCLUDE_DIR PkgConfig::GLFW INTERFACE_INCLUDE_DIRECTORIES)
+# get_target_property(AL_GLFW_LINK_LIBS PkgConfig::GLFW INTERFACE_LINK_LIBRARIES)
+# message("pkgconfig::glfw include dirs: ${AL_GLFW_INCLUDE_DIR}")
+# message("pkgconfig::glfw link libs: ${AL_GLFW_LINK_LIBS}")
 
-message("opengl lib: ${OPENGL_gl_LIBRARY}")
-message("opengl lib: ${OPENGL_glu_LIBRARY}")
+# message("opengl lib: ${OPENGL_gl_LIBRARY}")
+# message("opengl lib: ${OPENGL_glu_LIBRARY}")
 
 # set(CORE_INCLUDE_DIRS
   # ${GLFW_INCLUDE_DIRS}

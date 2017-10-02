@@ -106,7 +106,7 @@ target_link_libraries(al ${libs_to_link})
 target_link_libraries(al
     GLEW::GLEW
     PkgConfig::GLFW
-    ${OPENGL_LIBRARY}
+    ${OPENGL_gl_LIBRARY}
 )
 # target_link_libraries(
 #   al
