@@ -3,20 +3,10 @@
 #   ADDITIONAL_LIBRARIES
 # 	ADDITIONAL_HEADERS
 # 	ADDITIONAL_SOURCES
-#	  ADDITIONAL_DEFINITIONS
-
-option(USE_APR "" OFF)
 
 # al_path needs to be set prior to calling this script
 
-
-
 if (AL_WINDOWS)
-
-  if (USE_APR)
-    set(APR_INCLUDE_DIRS ${al_path}/dependencies/apr/include)
-    set(APR_LIBRARIES ${al_path}/dependencies/apr/libapr-1.lib)
-  endif (USE_APR)
 
   FIND_PATH(FREEIMAGE_INCLUDE_PATH FreeImage.h
     ${al_path}/dependencies/FreeImage/Dist/x64
@@ -26,18 +16,13 @@ if (AL_WINDOWS)
     PATHS ${al_path}/dependencies/FreeImage/Dist/x64
     DOC "The FreeImage library")
 
-  IF (FREEIMAGE_INCLUDE_PATH AND FREEIMAGE_LIBRARY)
+  if (FREEIMAGE_INCLUDE_PATH AND FREEIMAGE_LIBRARY)
     SET( FREEIMAGE_FOUND TRUE)
-  ELSE (FREEIMAGE_INCLUDE_PATH AND FREEIMAGE_LIBRARY)
+  else ()
     SET( FREEIMAGE_FOUND FALSE)
-  ENDIF (FREEIMAGE_INCLUDE_PATH AND FREEIMAGE_LIBRARY)
+  endif ()
 
 else ()
-
-  if (USE_APR)
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(APR REQUIRED apr-1)
-  endif (USE_APR)
 
   list(APPEND CMAKE_MODULE_PATH
     ${al_path}/cmake_modules/find_scripts
@@ -51,15 +36,6 @@ else ()
 
 endif (AL_WINDOWS)
 
-if (USE_APR)
-  set(APR_HEADERS
-    ${al_path}/include/al/util/al_Socket.hpp
-  )
-  set(APR_SOURCES
-    src/util/al_SocketAPR.cpp
-  )
-endif(USE_APR)
-
 if (FREEIMAGE_FOUND)
   message("found freeimage")
   set(FREEIMAGE_HEADERS
@@ -71,27 +47,17 @@ if (FREEIMAGE_FOUND)
 endif (FREEIMAGE_FOUND)
 
 set(ADDITIONAL_INCLUDE_DIRS
-	# ${PORTAUDIO_INCLUDE_DIRS}
-	${APR_INCLUDE_DIRS}
   ${FREEIMAGE_INCLUDE_PATH}
 )
 
 set(ADDITIONAL_LIBRARIES
-	# ${PORTAUDIO_LIBRARIES}
-	${APR_LIBRARIES}
   ${FREEIMAGE_LIBRARY}
 )
 
 set(ADDITIONAL_HEADERS
   ${FREEIMAGE_HEADERS}
-	${APR_HEADERS}
 )
 
 set(ADDITIONAL_SOURCES
   ${FREEIMAGE_SOURCES}
-	${APR_SOURCES}
-)
-
-set(ADDITIONAL_DEFINITIONS
-	# ${PORTAUDIO_DEFINITIONS}
 )

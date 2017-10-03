@@ -1,4 +1,4 @@
-# project's CMakeLists.txt file includes this script
+# user project's CMakeLists.txt file includes this script
 
 # this script needs following to be predefined:
 #         app_name
@@ -8,17 +8,16 @@
 #         app_link_libs (can be skipped)
 #         al_path
 
-
 include(${al_path}/cmake_modules/configure_platform.cmake)
 # sets: AL_MACOS || AL_LINUX || AL_WINDOWS, and PLATFORM_DEFINITION
 include(${al_path}/cmake_modules/find_core_dependencies.cmake)
-# sets: CORE_INCLUDE_DIRS, CORE_LIBRARIES, CORE_LIBRARY_DIRS
+# GLEW::GLEW PkgConfig::GLFW ${OPENGL_gl_LIBRARY}
 include(${al_path}/cmake_modules/find_additional_dependencies.cmake)
-# sets: ADDITIONAL_INCLUDE_DIRS, ADDITIONAL_LIBRARIES, ADDITIONAL_HEADERS,
-#       ADDITIONAL_SOURCES, ADDITIONAL_DEFINITIONS
+# sets: ADDITIONAL_INCLUDE_DIRS, ADDITIONAL_LIBRARIES,
+#       ADDITIONAL_HEADERS, ADDITIONAL_SOURCES
 include(${al_path}/cmake_modules/external.cmake)
-# sets: EXTERNAL_INCLUDE_DIRS, EXTERNAL_DEFINITIONS
-#       EXTERNAL_LIBRARIES, EXTERNAL_DEBUG_LIBRARIES EXTERNAL_RELEASE_LIBRARIES
+# sets: EXTERNAL_INCLUDE_DIRS, EXTERNAL_SRC, EXTERNAL_DEFINITIONS
+#       EXTERNAL_LIBRARIES
 include(${al_path}/cmake_modules/basic_flags.cmake)
 # sets: basic_flags
 
@@ -37,7 +36,6 @@ set(libs_to_link
 
 set(definitions
   ${PLATFORM_DEFINITION}
-  ${ADDITIONAL_DEFINITIONS}
   ${EXTERNAL_DEFINITIONS}
 )
 
@@ -54,37 +52,26 @@ endif ()
 
 add_executable(${app_name} ${app_files_list})
 
-set_target_properties(${app_name} PROPERTIES DEBUG_POSTFIX _debug)
-
-#paths
-set_target_properties(${app_name}
-    PROPERTIES
+set_target_properties(${app_name} PROPERTIES
+    DEBUG_POSTFIX _debug
+    CXX_STANDARD 14
+    CXX_STANDARD_REQUIRED ON
     RUNTIME_OUTPUT_DIRECTORY ${app_path}/bin
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${app_path}/bin
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${app_path}/bin
 )
 
-# flags
-target_compile_options(${app_name} PUBLIC ${flags}) # public because of headers
-
-# c++14
-set_target_properties(${app_name} PROPERTIES CXX_STANDARD 14)
-set_target_properties(${app_name} PROPERTIES CXX_STANDARD_REQUIRED ON)
-
-# definitions
+target_compile_options(${app_name} PUBLIC ${flags})
 target_compile_definitions(${app_name} PRIVATE ${definitions})
-
-# include dirs
 target_include_directories(${app_name} PRIVATE ${dirs_to_include})
 
-# libs
 if (AL_WINDOWS)
   target_link_libraries(${app_name} debug ${al_path}/lib/al_debug.lib optimized ${al_path}/lib/al.lib)
 else()
   target_link_libraries(${app_name} debug ${al_path}/lib/libal_debug.a optimized ${al_path}/lib/libal.a)
 endif (AL_WINDOWS)
-target_link_libraries(${app_name} ${libs_to_link})
 target_link_libraries(${app_name}
+    ${libs_to_link}
     GLEW::GLEW
     PkgConfig::GLFW
     ${OPENGL_gl_LIBRARY}

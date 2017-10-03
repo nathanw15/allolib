@@ -4,17 +4,14 @@
 #   EXTERNAL_LIBRARIES EXTERNAL_DEBUG_LIBRARIES EXTERNAL_RELEASE_LIBRARIES
 #   EXTERNAL_DEFINITIONS
 
-
 set(AudioAPI "rtaudio" CACHE STRING "Library for Audio IO")
 set_property(CACHE AudioAPI PROPERTY STRINGS rtaudio portaudio dummy)
 
 include(${al_path}/cmake_modules/external/oscpack.cmake)
-# include(${al_path}/cmake_modules/external/gamma.cmake)
 include(${al_path}/cmake_modules/external/rtmidi.cmake)
 
 set(EXTERNAL_INCLUDE_DIRS
   ${OSCPACK_INCLUDE_DIR}
-  # ${GAMMA_INCLUDE_DIR}
   ${RTMIDI_INCLUDE_DIR}
 )
 
@@ -26,14 +23,6 @@ set(EXTERNAL_SRC
 set(EXTERNAL_LIBRARIES
   ${RTMIDI_LIBRARIES}
 )
-
-# set(EXTERNAL_DEBUG_LIBRARIES
-#   ${GAMMA_DEBUG_LIBRARY}
-# )
-
-# set(EXTERNAL_RELEASE_LIBRARIES
-#   ${GAMMA_RELEASE_LIBRARY}
-# )
 
 set(EXTERNAL_DEFINITIONS
   ${RTMIDI_DEFINITIONS}

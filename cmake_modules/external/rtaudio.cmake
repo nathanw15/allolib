@@ -9,9 +9,9 @@ set_property(CACHE RtAudioLinuxAPI PROPERTY STRINGS alsa pulse jack)
 
 
 if(IS_DIRECTORY "${al_path}/external/rtaudio")
-  message("Using RtAudio")
+  # message("Using RtAudio")
 
-  add_definitions(-DAL_AUDIO_RTAUDIO)
+  # add_definitions(-DAL_AUDIO_RTAUDIO)
 
   set(RTAUDIO_INCLUDE_DIR ${al_path}/external/rtaudio)
   set(RTAUDIO_SRC external/rtaudio/RtAudio.cpp)
