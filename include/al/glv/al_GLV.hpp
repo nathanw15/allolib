@@ -5,7 +5,7 @@
     Keehong Youn, 2017, younkeehong@gmail.com
 */
 
-#include "al/core/gl/al_Graphics.hpp"
+#include "al/core/graphics/al_Graphics.hpp"
 
 #include "al/glv/glv_core.h" // GLV, View
 #include "al/glv/glv_layout.h"
@@ -18,7 +18,7 @@
 namespace al {
 
 void al_draw_glv(glv::GLV& glv, al::Graphics& g, unsigned x, unsigned y, unsigned w, unsigned h);
-void al_draw_glv(glv::GLV& glv, al::Graphics& g);
+void al_draw_glv(glv::GLV& glv, al::Graphics& g, al::Window* win);
 
 class GLVEventHandler : public WindowEventHandler {
 public:

@@ -8,113 +8,111 @@
 #include "al/core/app/al_AudioApp.hpp"
 #include "al/core/protocol/al_OSC.hpp"
 
-#include "al/core/gl/al_GLFW.hpp"
-#include "al/core/gl/al_Graphics.hpp"
-#include "al/core/gl/al_Viewpoint.hpp"
-#include "al/core/spatial/al_Pose.hpp"
+#include "al/core/graphics/al_GLFW.hpp"
+#include "al/core/graphics/al_Graphics.hpp"
 #include "al/core/io/al_ControlNav.hpp"
-#include "al/core/gl/al_DefaultShaders.hpp"
 
 #include <iostream>
 
 namespace al {
 
-// Unified app class: single window, audioIO, and
-//   single port osc recv & single port osc send
-// TODO: better osc interface
+// single window, audioIO, and single port osc recv & send
 class App: public WindowApp, public AudioApp, public osc::PacketHandler {
 public:
 
-  virtual void onInit() {}
-  virtual void onAnimate(double dt) {}
-  virtual void onExit() {}
+    class AppEventHandler : public WindowEventHandler {
+    public:
+        App* app;
+        AppEventHandler(App* a): app(a) {}
+        bool resize (int dw, int dh) override {
+            app->mViewport.set(0, 0, app->fbWidth(), app->fbHeight());
+            return true;
+        }
+    };
 
-  // for child classes to override
-  virtual void preOnCreate() {}
-  virtual void preOnDraw() {}
-  virtual void postOnDraw() {}
-  virtual void preOnAnimate(double dt) {}
+    Graphics mGraphics;
+    AppEventHandler eventHandler {this};
+    Viewpoint mView;
+    Viewport mViewport;
+    NavInputControl mNavControl;
 
-  // from WindowApp
-  virtual void open() override {
-    glfw::init();
-    onInit();
-    create();
-    preOnCreate();
-    onCreate();
-  }
+    Viewpoint& view() { return mView; }
+    const Viewpoint& view() const { return mView; }
 
-  // from WindowApp
-  virtual void loop() override {
-    preOnDraw();
-    onDraw();
-    postOnDraw();
-    refresh();
-  }
+    Nav& nav() { return mNavControl.nav(); }
+    const Nav& nav() const { return mNavControl.nav(); }
 
-  // overrides WindowApp's start to also initiate AudioApp and etc.
-  virtual void start() override {
-    open(); // WindowApp (glfw::init(), onInit(), create(), onCreate())
-    startFPS(); // WindowApp (FPS)
-    beginAudio(); // AudioApp (only begins if `initAudio` was called before)
-    while (!shouldQuit()) {
-      // user can quit this loop with WindowApp::quit() or clicking close button
-      // or with stdctrl class input (ctrl+q)
-      preOnAnimate(dt() / 1000000);
-      onAnimate(dt() / 1000000); // millis for dt
-      loop(); // WindowApp (onDraw, refresh)
-      tickFPS(); // WindowApp (FPS)
+    virtual void onInit() {}
+    virtual void onAnimate(double dt) {}
+    virtual void onExit() {}
+
+    virtual void preOnCreate() {
+        mNavControl.target(mView);
+        append(mNavControl);
+        append(eventHandler);
+        mGraphics.init();
+        mViewport.set(0, 0, fbWidth(), fbHeight());
     }
-    onExit(); // user defined
-    endAudio(); // AudioApp
-    closeApp(); // WindowApp
-  }
 
-  // PacketHandler
-  virtual void onMessage(osc::Message& m) override {}
-};
-
-class EasyApp : public App {
-public:
-  Graphics g {this};
-  Viewpoint view;
-  NavInputControl nav;
-
-  ShaderProgram mesh_shader;
-  ShaderProgram color_shader;
-  ShaderProgram tex_shader;
-
-  class EasyAppEventHandler : public WindowEventHandler {
-  public:
-    EasyApp* app;
-    EasyAppEventHandler(EasyApp* a): app(a) {}
-    virtual bool resize(int dw, int dh) override {
-      app->view.viewport(0, 0, app->fbWidth(), app->fbHeight());
-      return true;
+    virtual void preOnAnimate(double dt) {
+        mNavControl.step();
     }
-  };
-  EasyAppEventHandler eventHandler {this};
 
-  virtual void preOnCreate() override {
-    append(eventHandler);
-    append(nav);
-    nav.target(view);
-    mesh_shader.compile(al_mesh_vert_shader(), al_mesh_frag_shader());
-    color_shader.compile(al_color_vert_shader(), al_color_frag_shader());
-    tex_shader.compile(al_tex_vert_shader(), al_tex_frag_shader());
-    view.pos(Vec3f(0, 0, 20)).faceToward(Vec3f(0, 0, 0), Vec3f(0, 1, 0));
-    view.fovy(45.0f).near(0.1f).far(1000.0f);
-    view.viewport(0, 0, fbWidth(), fbHeight());
-  }
+    virtual void preOnDraw() {
+        mGraphics.framebuffer(FBO::DEFAULT);
+        mGraphics.viewport(mViewport);
+        mGraphics.camera(mView);
+        mGraphics.loadIdentity();
+        mGraphics.pushMatrix();
+    }
 
-  virtual void preOnAnimate(double dt) override {
-      nav.step();
-  }
+    virtual void onDraw (Graphics& g) {}
 
-  virtual void preOnDraw() override {
+    virtual void postOnDraw() {
+        mGraphics.popMatrix();
+    }
 
-  }
+    void onDraw () override {
+        onDraw(mGraphics);
+    }
 
+    // from WindowApp
+    void open() override {
+        glfw::init();
+        onInit();
+        create();
+        preOnCreate();
+        onCreate();
+    }
+
+    // from WindowApp
+    void loop() override {
+        preOnDraw();
+        onDraw();
+        postOnDraw();
+        refresh(); // Window
+    }
+
+    // overrides WindowApp's start to also initiate AudioApp and etc.
+    void start() override {
+        open();
+        beginAudio(); // only begins if `initAudio` was called before
+        startFPS(); // WindowApp (FPS)
+        while (!shouldQuit()) {
+            // to quit, call WindowApp::quit() or click close button of window,
+            // or press ctrl + q
+            preOnAnimate(dt() / 1000000.0f);
+            onAnimate(dt() / 1000000.0f); // millis for dt
+            loop(); // WindowApp (onDraw, refresh)
+            tickFPS(); // WindowApp (FPS)
+        }
+        onExit(); // user defined
+        endAudio(); // AudioApp
+        closeApp(); // WindowApp
+    }
+
+    // PacketHandler
+    void onMessage(osc::Message& m) override {}
 };
 
 }
