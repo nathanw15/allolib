@@ -2,7 +2,7 @@
 #   OSCPACK_INCLUDE_DIR
 #   OSCPACK_SRC
 
-set(OSCPACK_INCLUDE_DIR ${al_path}/external/oscpack)
+set(OSCPACK_INCLUDE_DIR external/oscpack)
 
 set(OSCPACK_SRC
   external/oscpack/osc/OscOutboundPacketStream.cpp
@@ -12,14 +12,14 @@ set(OSCPACK_SRC
   external/oscpack/ip/IpEndpointName.cpp
 )
 
-if (AL_WINDOWS)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND OSCPACK_SRC
     external/oscpack/ip/win32/NetworkingUtils.cpp
     external/oscpack/ip/win32/UdpSocket.cpp
   )
-else ()
+else () # UNIX systems
   list(APPEND OSCPACK_SRC
     external/oscpack/ip/posix/NetworkingUtils.cpp
     external/oscpack/ip/posix/UdpSocket.cpp
   )
-endif (AL_WINDOWS)
+endif ()

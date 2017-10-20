@@ -19,11 +19,21 @@ else ()
 endif ()
 
 # app config user specified
+#  - app_files_list
+#  - app_include_dirs
+#  - app_link_libs
+#  - user_al_path
 include(app_config.cmake) 
 
 # if al_path not defined by run script, set to one specified by user config
 if (NOT al_path)
-	set(al_path ${user_al_path})
+    set(al_path ${user_al_path})
 endif (NOT al_path)
 
-include(${al_path}/cmake_modules/app.cmake)
+# app_path
+# app_name
+# app_files_list
+# app_include_dirs
+# app_link_libs
+# al_path
+include(${al_path}/cmake/app.cmake)

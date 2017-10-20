@@ -1,53 +1,45 @@
 cmake_minimum_required(VERSION 3.6)
-
 project(allolib)
 set(al_path ${CMAKE_CURRENT_SOURCE_DIR})
 
-include(cmake_modules/configure_platform.cmake)
-# sets: AL_MACOS || AL_LINUX || AL_WINDOWS, and PLATFORM_DEFINITION
-include(cmake_modules/find_core_dependencies.cmake)
-# GLEW::GLEW PkgConfig::GLFW ${OPENGL_gl_LIBRARY}
-include(cmake_modules/find_additional_dependencies.cmake)
-# sets: ADDITIONAL_INCLUDE_DIRS, ADDITIONAL_LIBRARIES,
-#       ADDITIONAL_HEADERS, ADDITIONAL_SOURCES
-include(cmake_modules/external.cmake)
-# sets: EXTERNAL_INCLUDE_DIRS, EXTERNAL_SRC, EXTERNAL_DEFINITIONS
-#       EXTERNAL_LIBRARIES
-include(cmake_modules/basic_flags.cmake)
-# sets: basic_flags
-include(cmake_modules/al_files.cmake)
-# sets: al_headers, al_sources
+set(AudioAPI "rtaudio" CACHE STRING "Library for Audio IO")
+set_property(CACHE AudioAPI PROPERTY STRINGS rtaudio portaudio dummy)
 
-set(headers
-  ${al_headers} ${ADDITIONAL_HEADERS}
-)
+include(cmake/al_files.cmake)
+include(cmake/find_core_dependencies.cmake)
+include(cmake/oscpack.cmake)
+include(cmake/rtmidi.cmake)
 
-set(sources
-  ${al_sources} ${EXTERNAL_SRC} ${ADDITIONAL_SOURCES}
-)
+if (AudioAPI STREQUAL "rtaudio")
+  include(cmake/rtaudio.cmake)
+  set(AUDIO_INCLUDE_DIRS ${RTAUDIO_INCLUDE_DIRS})
+  set(AUDIO_SRC ${RTAUDIO_SRC})
+  set(AUDIO_LIBRARIES ${RTAUDIO_LIBRARIES})
+  set(AUDIO_DEFINITIONS ${RTAUDIO_DEFINITIONS} -DAL_AUDIO_RTAUDIO)
 
-set(dirs_to_include
-  ${ADDITIONAL_INCLUDE_DIRS} ${EXTERNAL_INCLUDE_DIRS}
-)
+elseif (AudioAPI STREQUAL "portaudio")
+  include(cmake/portaudio.cmake)
+  set(AUDIO_INCLUDE_DIRS ${PORTAUDIO_INCLUDE_DIRS})
+  set(AUDIO_SRC "")
+  set(AUDIO_LIBRARIES ${PORTAUDIO_LIBRARIES})
+  set(AUDIO_DEFINITIONS -DAL_AUDIO_PORTAUDIO)
 
-set(libs_to_link
-  ${ADDITIONAL_LIBRARIES} ${EXTERNAL_LIBRARIES}
-)
-
-set(definitions
-  ${PLATFORM_DEFINITION} ${EXTERNAL_DEFINITIONS}
-)
-
-set(flags
-  ${basic_flags}
-)
+elseif (AudioAPI STREQUAL "dummy")
+  set(AUDIO_INCLUDE_DIRS "")
+  set(AUDIO_SRC "")
+  set(AUDIO_LIBRARIES "")
+  set(AUDIO_DEFINITIONS -DAL_AUDIO_DUMMY)  
+endif()
 
 # multi configuration generators
 if (DEFINED CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 endif ()
 
-add_library(al STATIC ${headers} ${sources})
+add_library(al STATIC
+  ${al_headers} ${al_sources} 
+  ${OSCPACK_SRC} ${RTMIDI_SRC} ${AUDIO_SRC}
+)
 
 set_target_properties(al PROPERTIES
     DEBUG_POSTFIX                    _debug
@@ -58,15 +50,66 @@ set_target_properties(al PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
 
-target_compile_options(al PUBLIC ${flags})
-target_compile_definitions(al PUBLIC ${definitions})
-target_include_directories(al PUBLIC ${al_path}/include ${dirs_to_include})
-target_link_libraries(al
-    ${libs_to_link}
-    GLEW::GLEW
-    PkgConfig::GLFW
-    ${OPENGL_gl_LIBRARY}
+target_compile_options(al PRIVATE
+  $<$<PLATFORM_ID:Windows>:>
+  $<$<PLATFORM_ID:Darwin>:-Wall>
+  $<$<PLATFORM_ID:Linux>:-Wall>
 )
 
-# --- Testing -----------------------------------------
-add_subdirectory(test)
+target_compile_definitions(al PUBLIC
+  "$<$<PLATFORM_ID:Windows>:AL_WINDOWS>"
+  "$<$<PLATFORM_ID:Darwin>:AL_OSX;AL_UNIX>"
+  "$<$<PLATFORM_ID:Linux>:AL_LINUX;AL_UNIX>"
+  ${RTMIDI_DEFINITIONS}
+  ${AUDIO_DEFINITIONS}
+)
+
+foreach (dir include ${OSCPACK_INCLUDE_DIR} ${RTMIDI_INCLUDE_DIR} ${AUDIO_INCLUDE_DIRS})
+    target_include_directories(al PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}>"
+        "$<INSTALL_INTERFACE:${dir}>"
+    )
+endforeach (dir)
+
+target_link_libraries(al PUBLIC
+    ${OPENGL_gl_LIBRARY}
+    GLEW::GLEW
+    PkgConfig::GLFW
+    FreeImage::FreeImage
+    ${RTMIDI_LIBRARIES}
+    ${AUDIO_LIBRARIES}
+)
+
+if (${BUILD_TEST})
+  add_subdirectory(test)
+endif ()
+
+set(CMAKE_INSTALL_PREFIX ${al_path})
+
+install(TARGETS al
+  EXPORT al-targets
+  RUNTIME DESTINATION al/bin
+  LIBRARY DESTINATION al/lib
+  ARCHIVE DESTINATION al/lib
+)
+
+install(EXPORT al-targets DESTINATION al/cmake)
+install(DIRECTORY include DESTINATION al)
+
+install(FILES cmake/find_core_dependencies.cmake DESTINATION al/cmake)
+install(FILES cmake/FindFreeImage.cmake DESTINATION al/cmake)
+install(FILES cmake/app.cmake DESTINATION al/cmake)
+
+install(DIRECTORY external/oscpack/ip DESTINATION al/external/oscpack)
+install(DIRECTORY external/oscpack/osc DESTINATION al/external/oscpack)
+
+if (AudioAPI STREQUAL "rtaudio")
+    install(FILES external/rtaudio/RtAudio.h DESTINATION al/external/rtaudio)
+endif ()
+
+install(FILES external/rtmidi/rtmidi_c.h external/rtmidi/RtMidi.h
+        DESTINATION al/external/rtmidi)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    install(DIRECTORY dependencies DESTINATION al)
+endif ()
