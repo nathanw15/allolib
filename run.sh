@@ -54,6 +54,7 @@ LIB_BUILD_RESULT=$?
 if [ ${LIB_BUILD_RESULT} != 0 ]; then
   exit 1
 fi
+make install
 
 # then build the app ###########################################################
 

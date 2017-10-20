@@ -3,7 +3,7 @@
 using namespace al;
 using namespace std;
 
-class MyApp : public EasyApp {
+class MyApp : public App {
 public:
   Mesh mesh;
 
@@ -15,12 +15,10 @@ public:
     
   }
 
-  void onDraw() {
+  void onDraw(Graphics& g) {
     g.clear(0, 0, 0);
-    g.shader(color_shader);
-    g.shader().uniform("col0", Color(1, 0, 0));
-    g.camera(view);
     g.polygonMode(Graphics::LINE);
+    g.color(1, 0, 0);
     g.draw(mesh);
   }
 

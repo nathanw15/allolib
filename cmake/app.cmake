@@ -30,7 +30,7 @@ set_target_properties(${app_name} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${app_path}/bin
 )
 
-target_compile_options(al PRIVATE
+target_compile_options(${app_name} PRIVATE
   $<$<PLATFORM_ID:Windows>:>
   $<$<PLATFORM_ID:Darwin>:-Wall>
   $<$<PLATFORM_ID:Linux>:-Wall>
