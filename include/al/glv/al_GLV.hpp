@@ -5,6 +5,7 @@
     Keehong Youn, 2017, younkeehong@gmail.com
 */
 
+#include "al/core/io/al_Window.hpp"
 #include "al/core/graphics/al_Graphics.hpp"
 
 #include "al/glv/glv_core.h" // GLV, View
@@ -43,7 +44,7 @@ public:
 class SliderWithLabel {
 public:
     static void updateLabel(const glv::Notification& n);
-	SliderMinMax slider;
+    SliderMinMax slider;
     glv::Label label;
     glv::Label valueLabel;
     SliderWithLabel(std::string n);
@@ -56,7 +57,7 @@ public:
 
 class ButtonWithLabel {
 public:
-	glv::Buttons buttons;
+    glv::Buttons buttons;
     glv::Label label;
     ButtonWithLabel(std::string groupName, int numButtons);
     ButtonWithLabel(std::string groupName, int numCol, int numRow);
@@ -64,7 +65,7 @@ public:
 
 class NumberDialerWithLabel {
 public:
-	glv::NumberDialers dialer;
+    glv::NumberDialers dialer;
     glv::Label label;
     NumberDialerWithLabel(std::string name);
     NumberDialerWithLabel(std::string name, int numInt, int numFrac);
