@@ -1,46 +1,46 @@
 #ifndef INCLUDE_AL_CONTROL_NAV_HPP
 #define INCLUDE_AL_CONTROL_NAV_HPP
 
-/*  Allocore --
-  Multimedia / virtual environment application class library
+/*	Allocore --
+	Multimedia / virtual environment application class library
 
-  Copyright (C) 2009. AlloSphere Research Group, Media Arts & Technology, UCSB.
-  Copyright (C) 2012. The Regents of the University of California.
-  All rights reserved.
+	Copyright (C) 2009. AlloSphere Research Group, Media Arts & Technology, UCSB.
+	Copyright (C) 2012. The Regents of the University of California.
+	All rights reserved.
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
 
-    Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
+		Redistributions of source code must retain the above copyright notice,
+		this list of conditions and the following disclaimer.
 
-    Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
+		Redistributions in binary form must reproduce the above copyright
+		notice, this list of conditions and the following disclaimer in the
+		documentation and/or other materials provided with the distribution.
 
-    Neither the name of the University of California nor the names of its
-    contributors may be used to endorse or promote products derived from
-    this software without specific prior written permission.
+		Neither the name of the University of California nor the names of its
+		contributors may be used to endorse or promote products derived from
+		this software without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+	IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+	LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+	CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+	SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+	CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
 
 
-  File description:
-  Key/Mouse events to control 3D navigation
+	File description:
+	Key/Mouse events to control 3D navigation
 
-  File author(s):
-  Lance Putnam, 2010, putnam.lance@gmail.com
-  Graham Wakefield, 2010, grrrwaaa@gmail.com
+	File author(s):
+	Lance Putnam, 2010, putnam.lance@gmail.com
+	Graham Wakefield, 2010, grrrwaaa@gmail.com
     Keehong Youn, 2017, younkeehong@gmail.com
 
 */
@@ -50,19 +50,18 @@
 
 namespace al {
 
-/// This manipulates a Pose with smooth angular and positional velocities.
+///	This manipulates a Pose with smooth angular and positional velocities.
 /// The smoothing is done using a one-pole low-pass filter which
 /// produces an exponential ease-out type of transition.
 ///
 /// @ingroup allocore
 
-class Nav {
+class Nav : public Pose {
 public:
 
   /// @param[in] pos    Initial position
   /// @param[in] smooth  Motion smoothing amount in [0,1)
-  Nav(double smooth=0);
-  Nav(Pose& pose, double smooth=0);
+  Nav(const Vec3d& pos = Vec3d(0), double smooth=0);
 
   /// Copy constructor
   Nav(const Nav& nav);
@@ -79,15 +78,6 @@ public:
 
   /// Get forward unit vector
   const Vec3d& uf() const { return mUF; }
-
-  /// Get world space X unit vector
-  auto ux() const { return pose().ux(); }
-
-  /// Get world space Y unit vector
-  auto uy() const { return pose().uy(); }
-
-  /// Get world space Z unit vector
-  auto uz() const { return pose().uz(); }
 
   /// Get current linear and angular velocities as a Pose
   Pose vel() const {
@@ -184,8 +174,8 @@ public:
 
   /// Update coordinate frame basis vectors based on internal quaternion
   void updateDirectionVectors(){
-    mPosePtr->quat().normalize();
-    mPosePtr->directionVectors(mUR, mUU, mUF);
+    quat().normalize();
+    directionVectors(mUR, mUU, mUF);
   }
 
   Nav& set(const Pose& v);
@@ -204,33 +194,8 @@ public:
 
   /// Get transformed pose
   Pose& transformed(){ return mTransformed; }
-  
-  Pose& pose() {
-    return *mPosePtr;
-  }
-
-  Pose const& pose() const {
-    return *mPosePtr;
-  }
-
-  /// Set position
-  template <class T>
-  Nav& pos(T t){ pose().pos(t); return *this; }
-
-  /// Set position from individual components
-  Nav& pos(double x, double y, double z) { pose().pos(x, y, z); return *this; }
-
-  auto pos() { return pose().pos(); }
-  auto quat() { return pose().quat(); }
-
-  Nav& target(Pose& pose) {
-    mPosePtr = &pose;
-    updateDirectionVectors();
-    return *this;
-  }
 
 protected:
-  Pose* mPosePtr;
   Vec3d mMove0, mMove1;  // linear velocities (raw, smoothed)
   Vec3d mSpin0, mSpin1;  // angular velocities (raw, smoothed)
   Vec3d mTurn;      // orientation increment for one step
@@ -248,51 +213,41 @@ protected:
 class NavInputControl : public WindowEventHandler {
 public:
   NavInputControl(double vscale = 0.125, double tscale = 2.);
-  NavInputControl(Pose& pose, double vscale = 0.125, double tscale = 2.);
-  NavInputControl(const NavInputControl& v);
+  NavInputControl(Nav& nav, double vscale = 0.125, double tscale = 2.);
+	NavInputControl(const NavInputControl& v);
 
-  virtual ~NavInputControl(){}
+	virtual ~NavInputControl(){}
 
-  virtual bool keyDown(const Keyboard& k);
-  virtual bool keyUp(const Keyboard& k);
-  virtual bool mouseDrag(const Mouse& m);
+	virtual bool keyDown(const Keyboard& k);
+	virtual bool keyUp(const Keyboard& k);
+	virtual bool mouseDrag(const Mouse& m);
 
-  Nav& nav(){ return mNav; }
-  const Nav& nav() const { return mNav; }
-  // NavInputControl& nav(Nav& v){ mNav=v; return *this; }
+  void nav(Nav& n) { mNav = &n; }
+	Nav& nav(){ return *mNav; }
+	const Nav& nav() const { return *mNav; }
+	// NavInputControl& nav(Nav& v){ mNav=v; return *this; }
 
-  NavInputControl& target(Pose& pose) {
-    mNav.target(pose);
-    return *this;
-  }
+	// NavInputControl& target(Pose& pose) {
+ //    mNav.target(pose);
+ //    return *this;
+	// }
 
-  double vscale() const { return mVScale; }
-  NavInputControl& vscale(double v) { mVScale=v; return *this; }
+	double vscale() const { return mVScale; }
+	NavInputControl& vscale(double v) { mVScale=v; return *this; }
 
-  double tscale() const { return mTScale; }
-  NavInputControl& tscale(double v) { mTScale=v; return *this; }
+	double tscale() const { return mTScale; }
+	NavInputControl& tscale(double v) { mTScale=v; return *this; }
 
-  void useMouse(bool use){ mUseMouse = use; }
+	void useMouse(bool use){ mUseMouse = use; }
 
-  void step(double dt=1) {
-    mNav.step(dt);
-  }
+	// void step(double dt=1) {
+	// 	mNav.step(dt);
+	// }
 protected:
-  Nav mNav;
-  double mVScale, mTScale;
-  bool mUseMouse;
+	Nav* mNav = nullptr;
+	double mVScale, mTScale;
+	bool mUseMouse;
 };
-
-// class NavInputControlCosm : public NavInputControl {
-// public:
-//  NavInputControlCosm(Nav& nav, double vscale = 0.125, double tscale = 2.);
-
-//  virtual ~NavInputControlCosm() {}
-
-//  virtual bool onKeyDown(const Keyboard& k);
-//  virtual bool onKeyUp(const Keyboard& k);
-//  virtual bool onMouseDrag(const Mouse& m);
-// };
 
 } // al::
 
