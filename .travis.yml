@@ -19,8 +19,7 @@ addons:
   apt:
     sources:
     - sourceline: 'ppa:keithw/glfw3'
-    - ubuntu-toolchain-r-test
-    # - keithw
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
     - gcc-4.9
     - g++-4.9
@@ -41,7 +40,7 @@ script:
     - cmake . -DTRAVIS_BUILD=1 -DBUILD_EXAMPLES=1 -DCMAKE_BUILD_TYPE=Debug\
     - make
     - make test
-sudo: required
+sudo: false
 notifications:
   email:
     recipients:
