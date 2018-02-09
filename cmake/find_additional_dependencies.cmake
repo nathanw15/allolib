@@ -6,6 +6,7 @@
 #	  ADDITIONAL_DEFINITIONS
 
 option(USE_APR "" OFF)
+option(USE_MPI "" ON)
 
 # al_path needs to be set prior to calling this script
 
@@ -53,6 +54,7 @@ else ()
 
 endif (AL_WINDOWS)
 
+find_package(MPI QUIET)
 
 # NOW ADD OPTIONAL FILES -------------------------------------------------------
 
@@ -93,23 +95,35 @@ if (FREETYPE_INCLUDE_DIRS)
   set(freetype_sources ${al_path}/src/util/al_Font.cpp)
 endif()
 
+if (USE_MPI AND MPI_CXX_FOUND)
+  message("Using MPI: compiler ${MPI_C_COMPILER} ${MPI_CXX_INCLUDE_PATH}")
+  set(MPI_DEFINITIONS "-DAL_BUILD_MPI")
+else()
+  set(MPI_CXX_COMPILE_FLAGS "")
+  set(MPI_CXX_INCLUDE_PATH "")
+  set(MPI_CXX_LINK_FLAGS "")
+  set(MPI_CXX_LIBRARIES "")
+  set(MPI_DEFINITIONS "")
+endif()
 
 # EXPORT SEARCH RESULTS AND FILE LISTS -----------------------------------------
 
 set(ADDITIONAL_INCLUDE_DIRS
 	# ${PORTAUDIO_INCLUDE_DIRS}
-	${APR_INCLUDE_DIRS}
+  ${APR_INCLUDE_DIRS}
   ${FREEIMAGE_INCLUDE_PATH}
   ${ASSIMP_INCLUDE_DIR}
   ${FREETYPE_INCLUDE_DIRS}
+  ${MPI_CXX_INCLUDE_PATH}
 )
 
 set(ADDITIONAL_LIBRARIES
 	# ${PORTAUDIO_LIBRARIES}
-	${APR_LIBRARIES}
+  ${APR_LIBRARIES}
   ${FREEIMAGE_LIBRARY}
   ${ASSIMP_LIBRARY}
   ${FREETYPE_LIBRARY}
+  ${MPI_CXX_LIBRARIES}
 )
 
 set(ADDITIONAL_HEADERS
@@ -128,4 +142,13 @@ set(ADDITIONAL_SOURCES
 
 set(ADDITIONAL_DEFINITIONS
 	# ${PORTAUDIO_DEFINITIONS}
+  ${MPI_DEFINITIONS}
+)
+
+set(ADDITIONAL_COMPILE_FLAGS
+  ${MPI_CXX_COMPILE_FLAGS}
+)
+
+set(ADDITIONAL_LINK_FLAGS
+  ${MPI_CXX_LINK_FLAGS}
 )
