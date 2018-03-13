@@ -25,7 +25,7 @@ include(${al_path}/cmake/basic_flags.cmake)
 set(dirs_to_include
   ${al_path}/include
   ${app_include_dirs}
-  ${CORE_INCLUDE_DIRS}
+  # ${CORE_INCLUDE_DIRS}
   ${ADDITIONAL_INCLUDE_DIRS}
   ${EXTERNAL_INCLUDE_DIRS}
 )
@@ -96,6 +96,8 @@ else()
   target_link_libraries(${app_name} debug ${al_path}/lib/libal_debug.a optimized ${al_path}/lib/libal.a)
 endif (AL_WINDOWS)
 target_link_libraries(${app_name} ${libs_to_link})
+target_link_libraries(${app_name} GLEW::glew_s glfw)
+
 # target_link_libraries(
 #   ${app_name}
 #   debug ${debug_libs_to_link}

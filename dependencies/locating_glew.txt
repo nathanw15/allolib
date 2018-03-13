@@ -1,0 +1,6 @@
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=$(pwd)/install ./cmake
+make
+make install
+
+then copy install folder to this folder and name it glew

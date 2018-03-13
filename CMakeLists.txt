@@ -30,7 +30,7 @@ set(sources
 )
 
 set(dirs_to_include
-  ${CORE_INCLUDE_DIRS} ${ADDITIONAL_INCLUDE_DIRS} ${EXTERNAL_INCLUDE_DIRS}
+  ${ADDITIONAL_INCLUDE_DIRS} ${EXTERNAL_INCLUDE_DIRS}
 )
 
 set(libs_to_link
@@ -53,7 +53,7 @@ set(flags
   ${basic_flags}
 )
 
-link_directories(${CORE_LIBRARY_DIRS})
+# link_directories(${CORE_LIBRARY_DIRS})
 
 # --- NOW WE ARE READY TO SETUP THE LIBRARY TARGET ---------------------
 
@@ -73,7 +73,7 @@ set_target_properties(al
 )
 
 #flags
-target_compile_options(al PUBLIC ${flags}) # public because of headers
+target_compile_options(al PUBLIC ${flags}) # public because of headers ?
 
 # c++14
 set_target_properties(al PROPERTIES CXX_STANDARD 14)
@@ -90,7 +90,9 @@ target_include_directories(al PRIVATE include)
 target_include_directories(al PRIVATE ${dirs_to_include})
 
 # libs
-target_link_libraries(al ${libs_to_link})
+target_link_libraries(al PRIVATE ${libs_to_link})
+target_link_libraries(al PRIVATE GLEW::glew_s glfw)
+
 # target_link_libraries(
 #   al
 #   debug ${debug_libs_to_link}
@@ -98,4 +100,4 @@ target_link_libraries(al ${libs_to_link})
 # )
 
 # --- Testing -----------------------------------------
-add_subdirectory(test)
+# add_subdirectory(test)

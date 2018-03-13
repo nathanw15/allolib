@@ -1,0 +1,7 @@
+mkdir build
+cd bulid
+cmake -DCMAKE_INSTALL_PREFIX=$(pwd)/install ..
+make
+make install
+
+then copy install folder to this folder and name it glfw
