@@ -353,7 +353,15 @@ inline bool move_files_to_temp_dir_recursively_and_delete_original_folder(std::s
 
 		FindClose(hFind);
 	}
-	return deleteDir(d);
+
+    // lastly also move this directory to tempd
+    std::string new_folder_path = tempd;
+    new_folder_path.append("\\");
+    new_folder_path.append("minfilesys_file_to_be_deleted_");
+    const auto pos = d.find_last_of('\\');
+    const auto name = d.substr(pos+1);
+    new_folder_path.append(name);
+	return MoveFile(d.c_str(), new_folder_path.c_str());
 }
 
 inline bool delete_files_that_starts_with(std::string prefix)
@@ -368,7 +376,12 @@ inline bool delete_files_that_starts_with(std::string prefix)
 			std::string child = ".\\";
 			child.append(data.cFileName);
 			//std::cout << child << std::endl;
-			minFileSys::deleteFile(child);
+            if (isPathDir(child)) {
+                minFileSys::deleteDir(child);
+            }
+			else {
+                minFileSys::deleteFile(child);
+            }
 		}
 		while (FindNextFileA(hFind, &data) != 0);
 		FindClose(hFind);
