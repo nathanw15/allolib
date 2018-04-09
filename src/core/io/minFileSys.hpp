@@ -64,6 +64,7 @@ std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 #include <fstream>
 #include <iostream>
 #include <cstring> // std::strcmp
+#include <algorithm>
 
 namespace minFileSys {
 
@@ -358,10 +359,22 @@ inline bool move_files_to_temp_dir_recursively_and_delete_original_folder(std::s
     std::string new_folder_path = tempd;
     new_folder_path.append("\\");
     new_folder_path.append("minfilesys_file_to_be_deleted_");
-    const auto pos = d.find_last_of('\\');
-    const auto name = d.substr(pos+1);
+    std::string name = d;
+    std::replace_if(name.begin(), name.end(), [](char c) {
+        return ((c == '/') || (c == '\\'));
+    }, '_');
     new_folder_path.append(name);
-	return MoveFile(d.c_str(), new_folder_path.c_str());
+    while (MoveFile(d.c_str(), new_folder_path.c_str()) == 0) {
+        auto err = GetLastError();
+        if (err == ERROR_ALREADY_EXISTS) {
+            new_file_path.append("1");
+        }
+        else {
+            std::cout << "error moving dir for deletion " << err << std::endl;
+            return false;
+        }
+    }
+	return true;
 }
 
 inline bool delete_files_that_starts_with(std::string prefix)
