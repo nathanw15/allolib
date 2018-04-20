@@ -15,7 +15,7 @@ using namespace al;
 
 #define BLOCK_SIZE (1024)
 
-//#define SKIP_FOR_DEBUG
+#define SKIP_FOR_DEBUG
 
 int sampleRate = 44100;
 int outputChannels = 0;
@@ -185,13 +185,18 @@ public:
         addSphere(mSpeakerMesh);
 
         nav().pos(0, 1.0, 20.0);
-        initWindow();
+       // initWindow();
+
+        start();
+
 
         player.load("/Users/primary1/Documents/code/AlloSystemTest/Gamma/sounds/water3.wav");
     }
 
 
     void onDraw(Graphics& g){
+
+        g.clear();
         g.blendAdd();
 
         //Draw the source
@@ -535,8 +540,14 @@ int main(int argc, char *argv[] ) {
         mPeaks[i].store(0);
     }
 
-    AudioIO audioIO(BLOCK_SIZE, sampleRate, audioCB, 0, outputChannels, 1);
-    audioIO.device(AudioDevice("ECHO X5"));
+//    AudioIO audioIO;
+//    audioIO.init(audioCB, nullptr, 256, 44100, 2, 1);
+//    audioIO.open();
+//    audioIO.start();
+
+    AudioIO audioIO; //(BLOCK_SIZE, sampleRate, audioCB, 0, outputChannels, 1);
+    audioIO.init(audioCB,nullptr,BLOCK_SIZE,sampleRate,outputChannels,1);
+    //audioIO.device(AudioDevice("ECHO X5"));
     audioIO.start();
 
     audioIO.print();
