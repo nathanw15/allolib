@@ -199,6 +199,7 @@ public:
         g.clear();
         g.blendAdd();
 
+
         //Draw the source
         g.pushMatrix();
 
