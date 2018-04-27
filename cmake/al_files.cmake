@@ -59,6 +59,8 @@ set(core_headers
   include/al/core/system/al_Thread.hpp
   include/al/core/system/al_Time.hpp
   include/al/core/types/al_Color.hpp
+
+  nwFiles/lbap.hpp
 )
 
 set(core_sources
@@ -108,6 +110,8 @@ set(core_sources
   ${al_path}/src/core/system/al_ThreadNative.cpp
   ${al_path}/src/core/system/al_Time.cpp
   ${al_path}/src/core/types/al_Color.cpp
+
+  ${al_path}/nwFiles/lbap.cpp
 )
 
 set(util_headers
