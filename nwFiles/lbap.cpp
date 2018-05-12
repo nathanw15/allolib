@@ -6,6 +6,14 @@ namespace al {
 Lbap::Lbap(const SpeakerLayout &sl, bool isLeftHanded):	Spatializer(sl), isLeftHanded(isLeftHanded){
 
 
+    //1.) Find the number of layers and elevations of each layer
+    //2.) Sort elevations lowest to highest
+    //3.) Create speaker layer for each elevation
+    //4.) Add each speaker layer to speakerLayers
+    //5.) Assign each speaker to a speaker layer (warn or quit if a speaker cant be assigned)
+    //6.) Sort speakers in each speaker layer
+    //7.) Find left and right speakers of each speaker
+
     //TODO: Make this work for generic speaker layout
 
     //    SpeakerLayer slBottom(-32.5);
@@ -133,24 +141,16 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
         srcAzi += M_2PI;
     }
 
-    if(srcElev < speakerLayers[0].elevation){
-        //Below lowest layer
-
+    if(srcElev < speakerLayers[0].elevation || srcElev > speakerLayers[speakerLayers.size()-1].elevation){
+        //src elevation is above the top or below the bottom layer
         SpeakerLBAP *left, *right;
-        findSpeakerPair(srcAzi,&speakerLayers[0],left,right);
-        float dist = diffOfAngles(srcAzi,left->azimuth) / diffOfAngles(right->azimuth,left->azimuth);
 
-        for(int i = 0; i < numFrames; i++){
-            io.out(left->channel,i) = cos(dist*M_PI_2)*samples[i];
-            io.out(right->channel,i)= sin(dist*M_PI_2)*samples[i];
+        if(srcElev < speakerLayers[0].elevation){
+            findSpeakerPair(srcAzi,&speakerLayers[0],left,right);
+        } else {
+            findSpeakerPair(srcAzi,&speakerLayers[speakerLayers.size()-1],left,right);
         }
-        return;
 
-    }else if(srcElev > speakerLayers[speakerLayers.size()-1].elevation){
-        //Above highest layer
-
-        SpeakerLBAP *left, *right;
-        findSpeakerPair(srcAzi,&speakerLayers[speakerLayers.size()-1],left,right);
         float dist = diffOfAngles(srcAzi,left->azimuth) / diffOfAngles(right->azimuth,left->azimuth);
 
         for(int i = 0; i < numFrames; i++){
@@ -159,6 +159,33 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
         }
         return;
     }
+
+//    if(srcElev < speakerLayers[0].elevation){
+//        //Below lowest layer
+
+//        SpeakerLBAP *left, *right;
+//        findSpeakerPair(srcAzi,&speakerLayers[0],left,right);
+//        float dist = diffOfAngles(srcAzi,left->azimuth) / diffOfAngles(right->azimuth,left->azimuth);
+
+//        for(int i = 0; i < numFrames; i++){
+//            io.out(left->channel,i) = cos(dist*M_PI_2)*samples[i];
+//            io.out(right->channel,i)= sin(dist*M_PI_2)*samples[i];
+//        }
+//        return;
+
+//    }else if(srcElev > speakerLayers[speakerLayers.size()-1].elevation){
+//        //Above highest layer
+
+//        SpeakerLBAP *left, *right;
+//        findSpeakerPair(srcAzi,&speakerLayers[speakerLayers.size()-1],left,right);
+//        float dist = diffOfAngles(srcAzi,left->azimuth) / diffOfAngles(right->azimuth,left->azimuth);
+
+//        for(int i = 0; i < numFrames; i++){
+//            io.out(left->channel,i) = cos(dist*M_PI_2)*samples[i];
+//            io.out(right->channel,i)= sin(dist*M_PI_2)*samples[i];
+//        }
+//        return;
+//    }
 
     SpeakerLayer *bottom;
     SpeakerLayer *upper;
@@ -188,6 +215,7 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
 
     for(int i = 0; i < numFrames; i++){
 
+        //QUESTION: would calculating the gains outside of this loop be more efficient or is it not necessary?
         io.out(bottomLeft->channel,i) = cos(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
         io.out(bottomRight->channel,i) = sin(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
 

@@ -6,7 +6,7 @@ struct SpeakerLBAP
 {
     int channel;
 
-    //Angle from forward to right vector
+
     float azimuth;
     float elevation;
     Vec3f position;
@@ -15,6 +15,7 @@ struct SpeakerLBAP
     SpeakerLBAP *rightSpeaker;
 
 
+    //TODO: isLeftHanded - change name (intended to take into accound
     SpeakerLBAP(int channel=0,float angle=0.0,float elevation=0.0, float radius=1.0, bool isLeftHanded=true): elevation(elevation), channel(channel) {
 
         azimuth = toRad(angle);
@@ -23,13 +24,18 @@ struct SpeakerLBAP
             azimuth += M_2PI;
         }
 
-        if(!isLeftHanded){
-            azimuth = M_2PI - azimuth;
-        }
+//        if(!isLeftHanded){
+//            azimuth = M_2PI - azimuth;
+//        }
+
+//        double cosel = cos(toRad(elevation));
+//        double x = sin(azimuth) * cosel * radius;
+//        double y = cos(azimuth) * cosel * radius;
+//        double z = sin(toRad(elevation)) * radius;
 
         double cosel = cos(toRad(elevation));
-        double x = sin(azimuth) * cosel * radius;
-        double y = cos(azimuth) * cosel * radius;
+        double x = cos(azimuth) * cosel * radius;
+        double y = sin(azimuth) * cosel * radius;
         double z = sin(toRad(elevation)) * radius;
 
         position = Vec3d(x,y,z);
@@ -48,17 +54,9 @@ struct SpeakerLayer {
 
 
     //TODO: Add checks for 0-2PI or 0-360
-    void setElevationUsingDegrees(float elev){
-        elevation = toRad(elev);
-    }
+    void setElevationUsingDegrees(float elev){elevation = toRad(elev);}
+    void setElevationUsingRadians(float elev){elevation = elev;}
 
-    void setElevationUsingRadians(float elev){
-        elevation = elev;
-    }
-
-//    bool SpeakerLayer::speakerSort(SpeakerLBAP const &first, SpeakerLBAP const &second){
-//        return first.azimuth < second.azimuth;
-//    }
     static bool speakerSort(SpeakerLBAP const &first, SpeakerLBAP const &second){
         return first.azimuth < second.azimuth;
     }
@@ -66,6 +64,7 @@ struct SpeakerLayer {
     int initLayer(){
         std::sort(speakers.begin(),speakers.end(),&SpeakerLayer::speakerSort);
         for(int i = 0; i < speakers.size(); i++){
+
             int rightSpeakerPos = (i+1) % speakers.size();
             int leftSpeakerPos = i-1;
             if(leftSpeakerPos < 0){
@@ -89,7 +88,6 @@ public:
 
     virtual void renderSample(AudioIOData& io, const Pose& reldir, const float& sample, const int& frameIndex) override;
     virtual void renderBuffer(AudioIOData& io, const Pose& reldir, const float *samples, const int& numFrames) override;
-
 
     SpeakerLayer slBottom, slMiddle, slTop;
     std::vector<SpeakerLayer> speakerLayers;
