@@ -84,7 +84,7 @@ class Lbap : public Spatializer{
 public:
     Lbap(const SpeakerLayout &sl, bool isLeftHanded = false);
 
-    virtual void compile(Listener& listener) override;
+    //virtual void compile(Listener& listener) override;
 
     virtual void renderSample(AudioIOData& io, const Pose& reldir, const float& sample, const int& frameIndex) override;
     virtual void renderBuffer(AudioIOData& io, const Pose& reldir, const float *samples, const int& numFrames) override;

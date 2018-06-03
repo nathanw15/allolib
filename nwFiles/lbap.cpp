@@ -19,9 +19,18 @@ Lbap::Lbap(const SpeakerLayout &sl, bool isLeftHanded):	Spatializer(sl), isLeftH
     //    SpeakerLayer slBottom(-32.5);
     //    SpeakerLayer slMiddle(0.0);
     //    SpeakerLayer slTop(41.0);
+
+
+
+
     slBottom.setElevationUsingDegrees(-32.5);
     slMiddle.setElevationUsingDegrees(0.0);
     slTop.setElevationUsingDegrees(41.0);
+
+    speakerLayers.push_back(slBottom);
+    speakerLayers.push_back(slMiddle);
+    speakerLayers.push_back(slTop);
+
 
     float radius = 5.0;
 
@@ -32,25 +41,38 @@ Lbap::Lbap(const SpeakerLayout &sl, bool isLeftHanded):	Spatializer(sl), isLeftH
 
     for(int i = 0; i < alloSpeakers.size();i++){
         Speaker sp = alloSpeakers[i];
-
         float elevationRad = sp.elevation * M_PI/180.0;
-
-        if(elevationRad > slBottom.elevation-elevationTolerance && elevationRad < slBottom.elevation + elevationTolerance){
-            slBottom.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
-        }else if(elevationRad > slMiddle.elevation-elevationTolerance && elevationRad < slMiddle.elevation + elevationTolerance){
-            slMiddle.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
-        }else if(elevationRad > slTop.elevation-elevationTolerance && elevationRad < slTop.elevation + elevationTolerance){
-            slTop.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
+        for(int j = 0; j < speakerLayers.size(); j++){
+           // SpeakerLayer sl = speakerLayers[j];
+            if(elevationRad > speakerLayers[j].elevation-elevationTolerance && elevationRad < speakerLayers[j].elevation + elevationTolerance){
+                speakerLayers[j].speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
+                break;
+            }
         }
+
+//        if(elevationRad > slBottom.elevation-elevationTolerance && elevationRad < slBottom.elevation + elevationTolerance){
+//            slBottom.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
+//        }else if(elevationRad > slMiddle.elevation-elevationTolerance && elevationRad < slMiddle.elevation + elevationTolerance){
+//            slMiddle.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
+//        }else if(elevationRad > slTop.elevation-elevationTolerance && elevationRad < slTop.elevation + elevationTolerance){
+//            slTop.speakers.push_back(SpeakerLBAP(sp.deviceChannel,sp.azimuth,sp.elevation,radius,isLeftHanded));
+//        }
     }
 
-    slBottom.initLayer();
-    slMiddle.initLayer();
-    slTop.initLayer();
 
-    speakerLayers.push_back(slBottom);
-    speakerLayers.push_back(slMiddle);
-    speakerLayers.push_back(slTop);
+    for(int i = 0; i < speakerLayers.size(); i++){
+        speakerLayers[i].initLayer();
+    }
+
+//    slBottom.initLayer();
+//    slMiddle.initLayer();
+//    slTop.initLayer();
+
+
+
+//    speakerLayers.push_back(slBottom);
+//    speakerLayers.push_back(slMiddle);
+//    speakerLayers.push_back(slTop);
 
 }
 
@@ -108,9 +130,9 @@ void cartToSphericalCoords(Vec3d &vec){
 
 }
 
-void Lbap::compile(Listener& listener){
-    this->mListener = &listener;
-}
+//void Lbap::compile(Listener& listener){
+//    this->mListener = &listener;
+//}
 
 
 void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *samples, const int &numFrames){
@@ -120,8 +142,6 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
 
 
     Vec3d cords = reldir.vec();
-
-
 
     //Rotate vector according to listener-rotation
     //    Quatd srcRot = reldir.quat();
@@ -154,8 +174,8 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
         float dist = diffOfAngles(srcAzi,left->azimuth) / diffOfAngles(right->azimuth,left->azimuth);
 
         for(int i = 0; i < numFrames; i++){
-            io.out(left->channel,i) = cos(dist*M_PI_2)*samples[i];
-            io.out(right->channel,i)= sin(dist*M_PI_2)*samples[i];
+            io.out(left->channel,i) += cos(dist*M_PI_2)*samples[i];
+            io.out(right->channel,i) += sin(dist*M_PI_2)*samples[i];
         }
         return;
     }
@@ -216,11 +236,11 @@ void Lbap::renderBuffer(AudioIOData &io, const Pose &reldir, const float *sample
     for(int i = 0; i < numFrames; i++){
 
         //QUESTION: would calculating the gains outside of this loop be more efficient or is it not necessary?
-        io.out(bottomLeft->channel,i) = cos(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
-        io.out(bottomRight->channel,i) = sin(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
+        io.out(bottomLeft->channel,i) += cos(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
+        io.out(bottomRight->channel,i) += sin(blDist*M_PI_2)*cos(belowAmp*M_PI_2)*samples[i];
 
-        io.out(upperLeft->channel,i) = cos(alDist*M_PI_2)*cos(aboveAmp*M_PI_2)*samples[i];
-        io.out(upperRight->channel,i) = sin(alDist*M_PI_2)*cos(aboveAmp*M_PI_2)*samples[i];
+        io.out(upperLeft->channel,i) += cos(alDist*M_PI_2)*cos(aboveAmp*M_PI_2)*samples[i];
+        io.out(upperRight->channel,i) += sin(alDist*M_PI_2)*cos(aboveAmp*M_PI_2)*samples[i];
 
     }
 

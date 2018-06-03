@@ -37,6 +37,20 @@ float *sfBuffer;
 
 static Lbap *panner;
 
+
+//struct SoundObject{
+
+//    float *buffer;
+//    float azimuth;
+//    float elevation;
+
+//    SoundObject(float azimuth = 0, float elevation = 0): azimuth(azimuth), elevation(elevation) {
+//        buffer = (float*) calloc (BLOCK_SIZE,sizeof(float));
+//    }
+//};
+
+//vector<SoundObject> soundObjects;
+
 Vec3d convertCoords(Vec3d v){
     Vec3d returnVector;
 
@@ -164,13 +178,22 @@ static void audioCB(AudioIOData& io){
     float srcSound = sourceSound.get();
     float srcBuffer[BLOCK_SIZE];
 
+    //second src test
+    float srcBuffer2[BLOCK_SIZE];
+
     //soundFileBuffered.read(sfBuffer,BLOCK_SIZE);
 
     while (io()) {
 
+        player.loop();
+
         if(srcSound == 0){
             double sec = (t / io.fps());
             srcBuffer[io.frame()] = 0.5 * sin(sec*440*M_2PI);
+
+//            srcBuffer2[io.frame()] = 0.5 * sin(sec*440*M_2PI);
+            srcBuffer2[io.frame()] = player();
+
             t++;
         } else if(srcSound == 1){
             srcBuffer[io.frame()] = sfBuffer[io.frame()];
@@ -180,6 +203,10 @@ static void audioCB(AudioIOData& io){
     Vec3d srcPos(srcAzimuth.get(),srcElevation.get(),srcRadius);
 
     panner->renderBuffer(io,srcPos,srcBuffer,BLOCK_SIZE);
+
+    //second src test
+    Vec3d srcPos2(-0.5,0.5,6.0);
+    panner->renderBuffer(io,srcPos2,srcBuffer2,BLOCK_SIZE);
 
     for (int i = 0; i < outputChannels; i++) {
         mPeaks[i].store(0);
@@ -235,12 +262,15 @@ int main(int argc, char *argv[] ) {
         mPeaks[i].store(0);
     }
 
+
     AudioIO audioIO; //(BLOCK_SIZE, sampleRate, audioCB, 0, outputChannels, 1);
     audioIO.init(audioCB,nullptr,BLOCK_SIZE,sampleRate,outputChannels,1);
     //audioIO.device(AudioDevice("ECHO X5"));
     audioIO.start();
 
     audioIO.print();
+
+
 
     MyApp().start();
 
