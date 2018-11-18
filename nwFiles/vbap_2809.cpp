@@ -22,7 +22,6 @@ ParameterServer paramServer("127.0.0.1",8080);
 Parameter srcAzimuth("srcAzimuth","",-0.5,"",-1.0*M_PI,M_PI);
 ParameterBool updatePanner("updatePanner","",0.0);
 
-
 ParameterBool useRamp("useRamp","",0);
 Parameter rampStartAzimuth("rampStartAzimuth","",-0.5,"",-1.0*M_PI,M_PI);
 Parameter rampEndAzimuth("rampEndAzimuth","",0.5,"",-1.0*M_PI,M_PI);
@@ -31,12 +30,10 @@ Parameter rampDuration("rampDuration", "",1.0,"",0.0,5.0);
 float radius = 5.0;
 
 Parameter sourceSound("sourceSound","",0.0,"",0.0,3.0);
-Parameter soundFileIdx("soundFileIdx","",0.0);
+Parameter soundFileIdx("soundFileIdx","",0.0,"",0.0,3.0);
 
 ParameterBool sampleWise("sampleWise","",0.0);
-
-ParameterBool swise("swise");
-ParameterBool a("a","",0,"",0,1);
+ParameterBool useDelay("useDelay","", 0.0);
 
 Parameter masterGain("masterGain","",0.5,"",0.0,1.0);
 ParameterBool soundOn("soundOn","",0.0);
@@ -53,9 +50,29 @@ public:
     std::string oscTag;
     float aziInRad;
 
-    SpeakerV(int chan, float az=0.f, float el=0.f, int gr=0, float rad=1.f, float ga=1.f)
+    int delay;
+    void *buffer;
+    int bufferSize;
+    int readPos,writePos;
+
+    SpeakerV(int chan, float az=0.f, float el=0.f, int gr=0, float rad=1.f, float ga=1.f, int del = 0)
 
     {
+
+
+        delay = del;
+        readPos = 0;
+        writePos = delay;
+//        bufferSize = BLOCK_SIZE+(delay*2);
+        bufferSize = 44100*2;
+
+        buffer = calloc(bufferSize,sizeof(float));
+        //cout << "Speaker: " << chan << " Write Pos: " << writePos << endl;
+         //buffer = new float[bufferSize]();
+
+      // buffer = new gam::Array<float>();
+      // buffer.resize(delay*2);
+
         deviceChannel = chan;
         azimuth= az;
         elevation = el;
@@ -69,10 +86,29 @@ public:
         enabled->setHint("latch",1.f);
         paramServer.registerParameter(*enabled);
     }
+
+    float read(){
+        if(readPos >= bufferSize){
+            readPos = 0;
+        }
+        float *b = (float*)buffer;
+        float val = b[readPos];
+        readPos++;
+        return val;
+    }
+
+    void write(float samp){
+        if(writePos >= bufferSize){
+            writePos = 0;
+        }
+        float *b = (float*)buffer;
+        b[writePos] = samp;
+        writePos++;
+    }
 };
 
 std::vector<SpeakerV> speakers;
-std::vector<SpeakerV> enabledSpeakers;
+std::vector<SpeakerV*> enabledSpeakers;
 Mat<2,double> matrix;
 
 
@@ -105,13 +141,13 @@ struct Ramp {
         endSample = startSamp +  duration *SAMPLE_RATE;
         running = true;
         done = false;
-        cout << startSamp << " endSamp: " << endSample << endl;
+        //cout << startSamp << " endSamp: " << endSample << endl;
     }
 
     float next(unsigned int sampleNum){
 
         if(trigger){
-            cout << "linRampTriggered" << endl;
+            //cout << "linRampTriggered" << endl;
             trigger = false;
             start(sampleNum);
         }
@@ -133,15 +169,19 @@ struct Ramp {
     }
 };
 
-bool speakerSort(SpeakerV const &first, SpeakerV const &second){
-    return first.azimuth < second.azimuth;
+//bool speakerSort(SpeakerV const &first, SpeakerV const &second){
+//    return first.azimuth < second.azimuth;
+//}
+
+bool speakerSort(SpeakerV const *first, SpeakerV const *second){
+    return first->azimuth < second->azimuth;
 }
 
 void initPanner(){
     enabledSpeakers.clear();
     for(int i = 0; i < speakers.size(); i ++){
         if(speakers[i].enabled->get() > 0.5){
-            enabledSpeakers.push_back(speakers[i]);
+            enabledSpeakers.push_back(&speakers[i]);
         }
     }
     std::sort(enabledSpeakers.begin(),enabledSpeakers.end(),&speakerSort);
@@ -153,49 +193,34 @@ public:
     Mesh mSpeakerMesh;
     vector<Mesh> mVec;
     vector<int>  sChannels;
-
     SpeakerLayout speakerLayout;
     atomic<float> *mPeaks {nullptr};
     float speedMult = 0.03f;
-
     Vec3d srcpos {0.0,0.0,0.0};
-
     Ramp linearRamp;
     vector<gam::SamplePlayer<>*> samplePlayers;
     SearchPaths searchpaths;
-
-
     ControlGUI parameterGUI;
 
     MyApp()
     {
+        parameterGUI << soundOn << srcAzimuth << updatePanner << triggerRamp << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise << useDelay << masterGain << useRamp;
+//        parameterServer() << srcAzimuth << updatePanner << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise;
 
-        //ImGui::Checkbox("CheckBox")
-        //a.setHint("checkbox",1.0f);
-
-        parameterGUI << soundOn << srcAzimuth << updatePanner << triggerRamp << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise << masterGain << useRamp <<  a;
-//        parameterServer() << srcAzimuth << updatePanner << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise << swise;
-
-        paramServer << srcAzimuth << updatePanner << triggerRamp << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise << masterGain << useRamp << soundOn;
-
-
-
-
-
+        paramServer << srcAzimuth << updatePanner << triggerRamp << rampStartAzimuth << rampEndAzimuth << rampDuration << sourceSound << soundFileIdx << sampleWise << useDelay << masterGain << useRamp << soundOn;
         soundOn.setHint("latch", 1.f);
         sampleWise.setHint("latch", 1.f);
+        useDelay.setHint("latch",1.f);
         useRamp.setHint("latch",1.f);
 
         sourceSound.setHint("intcombo",1.f);
-
-        //rampStartAzimuth.setHint("intcombo",1.f);
+        soundFileIdx.setHint("intcombo",1.f);
 
         triggerRamp.registerChangeCallback([&](float val){
             if(val == 1.f){ // is this correct way to check?
-                cout << "Ramp triggered" << endl;
+                //cout << "Ramp triggered" << endl;
                 linearRamp.trigger = true;
             }
-
         });
 
         updatePanner.registerChangeCallback([&](float val){
@@ -205,15 +230,6 @@ public:
             initPanner();
         });
 
-        swise.registerChangeCallback([&](float newAzi){
-            cout << " swise: " << swise.get() << endl;
-        });
-
-
-        swise.setHint("latch",1.f);
-
-
-        //parameterGUI.registerParameterMeta()
         rampStartAzimuth.registerChangeCallback([&](float newAzi){
             linearRamp.startAzimuth = newAzi;
         });
@@ -227,11 +243,8 @@ public:
         });
     }
 
-
-    void createMatrix(SpeakerV &left, SpeakerV &right){
-        matrix.set(left.vec().x,left.vec().y,
-                   right.vec().x,right.vec().y
-                   );
+    void createMatrix(Vec3d left, Vec3d right){
+        matrix.set(left.x,left.y,right.x,right.y);
     }
 
     Vec3d ambiSphericalToOGLCart(float azimuth, float radius){
@@ -258,85 +271,108 @@ public:
         vec[2] = tempVec.y;
     }
 
-    Vec3d calcGains(AudioIOData &io, int &speakerChan1, int &speakerChan2){
-        float srcAzi = srcAzimuth.get();
+    //TODO: io not used here
+    Vec3d calcGains(AudioIOData &io, const float &srcAzi, int &speakerChan1, int &speakerChan2){
 
         srcpos = ambiSphericalToOGLCart(srcAzi,radius);
-
         Vec3f ambiCartSrcPos = srcpos;
         openGLCartToAmbiCart(ambiCartSrcPos);
-
         std::sort(enabledSpeakers.begin(),enabledSpeakers.end(),&speakerSort);
-
         Vec3d gains(0.,0.,0.);
-//        int speakerChan1, speakerChan2;
-
         float speakSrcAngle,linearDistance;
 
         //check if source is beyond the first or last speaker
-        if(srcAzi < enabledSpeakers[0].aziInRad){
-            speakerChan1 = enabledSpeakers[0].deviceChannel;
-            speakerChan2 = enabledSpeakers[0+1].deviceChannel;
-            speakSrcAngle = fabsf(enabledSpeakers[0].aziInRad - srcAzi);
-//            linearDistance = 2.0*radius*cos((M_PI - speakSrcAngle)/2.0);
-//            gains.x = 1.f / (1.f + linearDistance);
-
+        if(srcAzi < enabledSpeakers[0]->aziInRad){
+            speakerChan1 = enabledSpeakers[0]->deviceChannel;
+            speakerChan2 = enabledSpeakers[0+1]->deviceChannel;
+            speakSrcAngle = fabsf(enabledSpeakers[0]->aziInRad - srcAzi);
             gains.x = 1.f / radius * (M_PI - speakSrcAngle);
 
-        } else if(srcAzi > enabledSpeakers[enabledSpeakers.size()-1].aziInRad){
-            speakerChan1 = enabledSpeakers[enabledSpeakers.size()-2].deviceChannel;//set to speaker before last
-            speakerChan2 = enabledSpeakers[enabledSpeakers.size()-1].deviceChannel;
-            speakSrcAngle = fabsf(enabledSpeakers[enabledSpeakers.size()-1].aziInRad - srcAzi);
+        } else if(srcAzi > enabledSpeakers[enabledSpeakers.size()-1]->aziInRad){
+            speakerChan1 = enabledSpeakers[enabledSpeakers.size()-2]->deviceChannel;//set to speaker before last
+            speakerChan2 = enabledSpeakers[enabledSpeakers.size()-1]->deviceChannel;
+            speakSrcAngle = fabsf(enabledSpeakers[enabledSpeakers.size()-1]->aziInRad - srcAzi);
             linearDistance = 2.0*radius*cos((M_PI - speakSrcAngle)/2.0);
-            //gains.y = 1.f / (1.f + linearDistance);
             gains.y = 1.f / radius * (M_PI - speakSrcAngle);
 
         } else{//Source between first and last speakers
-
             for(int i = 0; i < enabledSpeakers.size()-1; i++){
-                speakerChan1 = enabledSpeakers[i].deviceChannel;
-                speakerChan2 = enabledSpeakers[i+1].deviceChannel;
-
-                if(srcAzi == enabledSpeakers[i].aziInRad ){
+                speakerChan1 = enabledSpeakers[i]->deviceChannel;
+                speakerChan2 = enabledSpeakers[i+1]->deviceChannel;
+                if(srcAzi == enabledSpeakers[i]->aziInRad ){
                     gains.x = 1.0;
                     break;
-                }else if(srcAzi > enabledSpeakers[i].aziInRad && srcAzi < enabledSpeakers[i+1].aziInRad){
-
-                    createMatrix(enabledSpeakers[i],enabledSpeakers[i+1]);
+                }else if(srcAzi > enabledSpeakers[i]->aziInRad && srcAzi < enabledSpeakers[i+1]->aziInRad){
+                    createMatrix(enabledSpeakers[i]->vec(),enabledSpeakers[i+1]->vec());
                     invert(matrix);
                     for (unsigned i = 0; i < 2; i++){
                         for (unsigned j = 0; j < 2; j++){
                             gains[i] += ambiCartSrcPos[j] * matrix(j,i);
                         }
                     }
-
                     gains = gains.normalize();
                     break;
-
-                } else if(srcAzi == enabledSpeakers[i+1].aziInRad){
+                } else if(srcAzi == enabledSpeakers[i+1]->aziInRad){
                     gains.y = 1.0;
                     break;
                 }
             }
         }
-
         return gains;
     }
 
-    void renderBuffer(AudioIOData &io, const float *buffer){
+    void renderBufferDelaySpeakers(AudioIOData &io,const float &srcAzi, const float *buffer){
         int speakerChan1, speakerChan2;
-        Vec3d gains = calcGains(io, speakerChan1, speakerChan2);
+        Vec3d gains = calcGains(io,srcAzi, speakerChan1, speakerChan2);
+
+        for(int i = 0; i < enabledSpeakers.size(); i++){
+            SpeakerV *s = enabledSpeakers[i];
+            for(int j = 0; j < io.framesPerBuffer();j++){
+                if(s->deviceChannel == speakerChan1){
+                    s->write(buffer[j]*gains[0]);
+                }else if(s->deviceChannel == speakerChan2){
+                    s->write(buffer[j]*gains[1]);
+                }else{
+                    s->write(0.0);
+                }
+                io.out(s->deviceChannel,j) = s->read();
+            }
+        }
+    }
+
+    void renderSampleDelaySpeakers(AudioIOData &io,const float &srcAzi, const float &sample){
+        int speakerChan1, speakerChan2;
+        Vec3d gains = calcGains(io,srcAzi, speakerChan1, speakerChan2);
+
+        for(int i = 0; i < enabledSpeakers.size(); i++){
+            SpeakerV *s = enabledSpeakers[i];
+
+            if(s->deviceChannel == speakerChan1){
+                s->write(sample*gains[0]);
+            }else if(s->deviceChannel == speakerChan2){
+                s->write(sample*gains[1]);
+            }else{
+                s->write(0.0);
+            }
+            io.out(s->deviceChannel,io.frame()) = s->read();
+        }
+    }
+
+
+    void renderBuffer(AudioIOData &io,const float &srcAzi, const float *buffer){
+        int speakerChan1, speakerChan2;
+        Vec3d gains = calcGains(io,srcAzi, speakerChan1, speakerChan2);
         for(int i = 0; i < io.framesPerBuffer(); i++){
             io.out(speakerChan1,i) += buffer[i]*gains[0];
             io.out(speakerChan2,i) += buffer[i]*gains[1];
         }
     }
 
-    void renderSample(AudioIOData &io, const float &sample, const int &frameIndex){
+    void renderSample(AudioIOData &io, const float &srcAzi, const float &sample){
         int speakerChan1, speakerChan2;
-        Vec3d gains = calcGains(io, speakerChan1, speakerChan2);
-        io.out(speakerChan1,frameIndex) += sample * gains[0];
-        io.out(speakerChan2,frameIndex) += sample * gains[1];
+        Vec3d gains = calcGains(io,srcAzi, speakerChan1, speakerChan2);
+        io.out(speakerChan1,io.frame()) += sample * gains[0];
+        io.out(speakerChan2,io.frame()) += sample * gains[1];
     }
 
     void onInit() override {
@@ -350,9 +386,19 @@ public:
         linearRamp.set(-2.0,2.0,rampDuration.get());
 
 
+       // SpeakerV(0,90.0,0.0,0,5.0,1.0,0);
+       // speakers.push_back(SpeakerV(0,90.0 - (10.0*0),0.0,0,5.0,1.0,0));
+
         for (int i = 0; i < 20; i++){
-            speakers.push_back(SpeakerV(i,-90.0 + (10.0*i),0.0,0,5.0));
+
+
+            int delay = rand() % static_cast<int>(44100 + 1);
+
+            speakers.push_back(SpeakerV(i,90.0 - (10.0*i),0.0,0,5.0,0,delay));
         }
+
+//speakers.push_back(SpeakerV(0,90.0,0.0,0,5.0,0,0));
+//speakers.push_back(SpeakerV(1,0.0,0.0,0,5.0,0,5000));
 
 //        speakers.push_back(SpeakerV(0,-45.0,0.0,0,5.0));
 //        speakers.push_back(SpeakerV(1,-20.0,0.0,0,5.0));
@@ -360,7 +406,7 @@ public:
 //        speakers.push_back(SpeakerV(3,20.0,0.0,0,5.0));
 //        speakers.push_back(SpeakerV(4,45.0,0.0,0,5.0));
 
-        speakers[1].enabled->set(0.0);
+        //speakers[1].enabled->set(0.0);
 
         initPanner();
 
@@ -392,23 +438,10 @@ public:
     }
 
     void onAnimate( double dt) override {
-//        static int cnt = 0;
-//        if(cnt % 10 == 0){
-//            cout << swise.get() << endl;
-//        }
-//        cnt++;
-
-
-        //nav().faceToward(Vec3f(0,0,0)); // Always face origin
+        navControl().active(!parameterGUI.usingInput());
     }
 
     virtual void onSound(AudioIOData &io) override {
-
-//        if(updatePanner.get() > 0.5){
-//            cout << "updatePanner triggered" << endl;
-//            updatePanner.set(0.0);
-//            initPanner();
-//        }
 
         static unsigned int t = 0;
         double sec;
@@ -437,12 +470,20 @@ public:
                 }
 
                 if(sampleWise.get() == 1.f){
-                    renderSample(io,srcBuffer[i],i);
+                    if(useDelay.get() == 1.f){
+                        renderSampleDelaySpeakers(io,srcAzimuth.get(),srcBuffer[i]);
+                    } else {
+                        renderSample(io,srcAzimuth.get(), srcBuffer[i]);
+                    }
                 }
             }
 
             if(sampleWise.get() == 0.f){
-                renderBuffer(io,srcBuffer);
+                if(useDelay.get() == 1.f){
+                    renderBufferDelaySpeakers(io,srcAzimuth.get(), srcBuffer);
+                }else{
+                    renderBuffer(io,srcAzimuth.get(), srcBuffer);
+                }
             }
         }
 
@@ -500,7 +541,12 @@ public:
             float peak = mPeaks[devChan].load();
             g.scale(0.02 + peak * 6);
             g.polygonLine();
+
+            if(devChan == 0){
+                g.color(1.0,0.0,0.0);
+            }else{
             g.color(1);
+            }
             g.draw(mSpeakerMesh);
             g.popMatrix();
         }
@@ -515,6 +561,7 @@ int main(){
 
      //audioRate audioBlockSize audioOutputs audioInputs device
 
+    //-1 for audioOutputs or audioInputs opens all available channels. see: AudioIO::channels()
     app.initAudio(SAMPLE_RATE, BLOCK_SIZE, 60, 0, -1);
 
     // Use this for 2809                   **CHANGE AUDIO INPUT TO 0 **
